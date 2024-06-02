@@ -1,11 +1,18 @@
+// routes/index.js
 const express = require('express');
 const router = express.Router();
 
 // Define a route for the home page
 router.get('/', (req, res) => {
-  const user = { name: 'John Doe' }; // Example user data
-  res.render('index', { user });
+  res.render('index');
+});
+
+router.get('/penduduk', (req, res) => {
+  res.render('penduduk');
+});
+
+router.get('/surat-form', (req, res) => {
+  res.render('surat-form');
 });
 
 module.exports = router;
-

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pemdes App</title>
+  <!-- Tabulator CSS from CDN -->
+  <link href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator.min.css" rel="stylesheet">
+</head>
+<body>
+  <% include nav %>
+  <h1>Penduduk</h1>
+  
+  <div id="penduduk-table"></div>
+
+  <!-- Tabulator JS from CDN -->
+  <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script> 
+  <script>
+    // Function to handle cell editing
+    function handleCellEdit(cell) {
+      const rowData = cell.getRow().getData();
+      if (rowData.rt) {
+        rowData.rt = padToThreeDigits(rowData.rt);
+      }
+      if (rowData.rw) {
+        rowData.rw = padToThreeDigits(rowData.rw);
+      }
+      fetch(`/api/penduduks/${rowData._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rowData)
+      });
+    }
+
+    // Helper function to pad a number to three digits
+    function padToThreeDigits(input) {
+      const number = Number(input);
+      if (!isNaN(number)) {
+        return String(number).padStart(3, '0');
+      }
+      return input;
+    }
+
+    // Function to dynamically generate columns based on the data keys
+    function generateColumns(data) {
+      if (data.length === 0) return [];
+      const keys = Object.keys(data[0]);
+      const columns = keys.map(key => {
+        switch (key) {
+          case '_id':
+          case '__v':
+            return null; // Skip these fields
+          case 'jk':
+            return {
+              title: key.replace(/_/g, ' ').toUpperCase(),
+              field: key,
+              editor: "list",
+              editorParams: { values: { "L": "Laki-laki", "P": "Perempuan", "X": "Lainnya" } },
+              cellEdited: handleCellEdit,
+              headerFilter:"list", 
+              headerFilterParams:{valuesLookup:true, clearable:true},
+            };
+          case 'kej':
+            return {
+              title: key.replace(/_/g, ' ').toUpperCase(),
+              field: key,
+              editor: "list",
+              editorParams: { values: { "Mati": "Mati", "Pindah": "Pindah", "":"Kosong"} },
+              cellEdited: handleCellEdit,
+              headerFilter:"list", 
+              headerFilterParams:{valuesLookup:true, clearable:true},
+            };
+          case 'nik':
+          case 'nama':
+            return {
+              title: key.replace(/_/g, ' ').toUpperCase(),
+              field: key,
+              editor: "input",
+              frozen: true,
+              cellEdited: handleCellEdit,
+              headerFilter:"input",
+            };
+          default:
+            return {
+              title: key.replace(/_/g, ' ').toUpperCase(),
+              field: key,
+              editor: "input",
+              cellEdited: handleCellEdit,
+              headerFilter:"input",
+            };
+        }
+      }).filter(column => column !== null);
+
+      return columns;
+    }
+
+    // Initialize Tabulator on the DOM element
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/penduduks')
+        .then(response => response.json())
+        .then(data => {
+          const columns = generateColumns(data);
+          new Tabulator("#penduduk-table", {
+            data: data,
+            layout: "fitData",
+            height: "450px", 
+            columns: columns.length > 0 ? columns : [{ title: "No Data Available", field: "no_data" }],
+            dataLoaded: function(data) {
+              console.log('Data loaded:', data); // Check if data is loaded
+            }
+          });
+        });
+    });
+  </script>
+</body>
+</html>

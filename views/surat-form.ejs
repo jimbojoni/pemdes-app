@@ -1,0 +1,78 @@
+<!-- views/surat-form.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surat Form</title>
+</head>
+<body>
+    <% include nav %>
+    <h1>Surat Form</h1>
+    <form id="suratForm">
+        <label for="templates">Choose a Template:</label>
+        <select id="templates" name="template">
+            <option value="template1">Template 1</option>
+            <option value="template2">Template 2</option>
+        </select>
+
+        <label for="nama">Nama:</label>
+        <input type="text" id="nama" name="nama">
+
+        <label for="nik">NIK:</label>
+        <input type="text" id="nik" name="nik">
+
+        <label for="kk">KK:</label>
+        <input type="text" id="kk" name="kk">
+
+        <button type="submit">Generate Document</button>
+    </form>
+
+    <script>
+        document.getElementById('suratForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Get the form data
+            var form = document.getElementById('suratForm');
+            var formData = new FormData(form);
+
+            // Convert FormData to an object and replace empty values with dots
+            var formDataObj = {};
+            formData.forEach((value, key) => {
+                if (value.trim() === '') {
+                    formDataObj[key] = '.............................................................................';
+                } else {
+                    formDataObj[key] = value;
+                }
+            });
+
+            // Make a POST request using Fetch API
+            fetch('/document/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formDataObj)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Handle the response
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'output.docx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
